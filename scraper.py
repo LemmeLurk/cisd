@@ -8,10 +8,11 @@ import urllib2
 
 root_url = 
 
-link_constant = "http://zeus.mtsac.edu/~rpatters/CISD11/Workshops/"
+__LINK_CONSTANT = "http://zeus.mtsac.edu/~rpatters/CISD11/Workshops/"
 
-link_types = ["Assignment.htm", "Lab.htm"]
+__CLASS_SECTIONS = ["Assignment.htm", "Lab.htm"]
 
+__DIRECTORIES = ""
 
 # # 
 
@@ -22,7 +23,6 @@ def get_Soup (url):
     return BeautifulSoup (DOM);
 
 
-# Used by prepare_Directories()
 def get_File_Names (links):
 
     file_names = [links.len]
@@ -43,6 +43,8 @@ def prepare_Directories (filenames):
         # TODO replace with real code
         if !exists(dir_name):
 
+            # Delete current directory, and remake it
+
             os.makedirs (dir_name)
 
     return;
@@ -50,15 +52,11 @@ def prepare_Directories (filenames):
 
 def get_Download_Links (web_page):
 
-    #   built-in logic
     string_pattern = re.compile (r'\bdownload')
 
-    links = web_page.find_all ('a',  attrs={'title' : string_pattern}) 
+    _links = web_page.find_all ('a',  attrs={'title' : string_pattern}) 
 
-    filenames = get_File_Names (links);
-
-    prepare_Directories (filenames)
-
+    #   Prepare Urls
     for count in range (1, URL_MAX):
 
         url = ""
@@ -69,13 +67,13 @@ def get_Download_Links (web_page):
 
             url = "http://zeus.mtsac.edu/~rpatters/CISD11/Workshops/"   \
                 + "Workshop_"   + o_number + "/Workshop" + o_number     \
-                + "/21694/"     + filenames[count]
+                + "/21694/"     + __CLASS_SECTIONS[count]
 
         else:
 
             url =   "http://zeus.mtsac.edu/~rpatters/CISD11/Workshops/"     \
                 +   "Workshop_" + str (count) + "/Workshop" + str (count)   \
-                +   "/21694/"   + filenames[count]
+                +   "/21694/"   + __CLASS_SECTIONS[count]
 
         urls[count] = url
 
@@ -103,17 +101,19 @@ def download_File (link, directory, filename):
 def CISD_Scraper (url):
 
     soup = get_Soup (url)
+    
+    download_links = get_Download_Links (soup)
 
-    assignment_download_links = get_Download_Links (soup)
+    filenames = get_File_Names (download_links)
 
-    lab_download_links = get_Download_Links (soup)
+    prepare_Directories (filenames)
 
-    prepare_Directories (download_links)
+    for i, url in workshop_urls:
 
-    for link in links:
+        download_link = re.sub(r"(../../../)", __LINK_CONSTANT, url)
 
-        download_link = re.sub(r"(../../../)", link_constant, link['href'])
-
-        download_File (download_link)
+        download_File (download_link, directories[i], )
 
     return;
+
+
