@@ -11,6 +11,25 @@ __LINK_CONSTANT = "http://zeus.mtsac.edu/~rpatters/CISD11/Workshops/"
 
 __CLASS_SECTIONS = ["Assignment.htm", "Lab.htm"]
 
+__MAX_URL = 16
+
+# # 
+
+
+class Workshop:
+
+    def __init__ (self, section_title, chapter_number):
+
+        self.section_number = section_number
+
+        self.chapter_number = chapter_number
+
+        self.directory = section_title + '/Chapter' + chapter_number
+
+        self.files = None
+    
+
+
 # # 
 
 def get_Soup (url):
@@ -35,21 +54,27 @@ def get_File_Names (links):
     return file_names;
 
 
-def get_Directories (filenames):
+def get_Directories (section, filenames):
 
     directories = []
 
-    for i in range (1, filenames.__len__ ()):
+    if os.path.exists (section):
 
-        dir_name = filenames[i] + "_" + str(i)
+        shutil.rmtree (section)
 
-        if os.path.exists (dir_name):
+    os.makedirs (section)
 
-            shutil.rmtree (dir_name)
+    for i in range (1, __MAX_URL):
 
-        os.makedirs (dir_name)
+        directory_name = str (section) + '/Chapter_' + str(i) 
 
-        directories.append (dir_name)
+        if os.path.exists (directory_name):
+
+            shutil.rmtree (directory_name)
+
+        os.makedirs (directory_name)
+
+        directories.append (directory_name)
 
     return directories;
 
@@ -58,7 +83,7 @@ def get_Workshop_Urls (class_section):
 
     urls = [] 
 
-    for count in range (1, 16):
+    for count in range (1, __MAX_URL):
 
         url = ""
 
@@ -78,9 +103,11 @@ def get_Workshop_Urls (class_section):
 
         urls.append (url)
 
+# TESTING
     print ("\n"+"get_Workshop_Urls -- urls = \n")
     print (urls)
     print ("\n")
+# TESTING
     return urls; 
 
 
@@ -90,9 +117,11 @@ def get_Download_Links (web_page):
 
     links = web_page.find_all ('a',  attrs={'title' : string_pattern});
 
+# TESTING
     print ("\nget_Download_Links() -- links = \n")
     print (links)
     print ("\n")
+# TESTING
 
     return links;
     
@@ -118,11 +147,6 @@ def CISD_Scraper (class_section):
 
     workshop_urls = get_Workshop_Urls (class_section);
 
-
-# TESTING
-    f = open ('links.txt', 'w')
-# TESTING
-
     for url in workshop_urls:
 
         soup = get_Soup (url)
@@ -133,22 +157,12 @@ def CISD_Scraper (class_section):
 
         directories = get_Directories (filenames)
 
-        i = 0
-
-        for link in download_links:
+        for link, directory in zip (download_links, directories):
 
             download_link = \
-                re.sub(r"(../../../)", str(__LINK_CONSTANT), link['href'])
-# TESTING
-            f.write (download_link)
+                re.sub(r"(../../../)", __LINK_CONSTANT, link['href'])
 
-            print ('\n\nCISD_Scraper() -- link:' + download_link  + '\n\n')
-# TESTING
-            #download_File (download_link, directories[i], filenames[i])
-
-            i += 1
-
-    f.close ()
+            download_File (download_link, directory)
 
     return;
 
