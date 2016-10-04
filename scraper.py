@@ -125,7 +125,7 @@ def get_Workshop_Url (class_section, chapter_number):
     else:
 
         url =   "http://zeus.mtsac.edu/~rpatters/CISD11/Workshops/"     \
-            +   "Workshop_" + str (chapter_number)  + "/Workshop" +     \
+            +   "Workshop_" + str (chapter_number)  + "/Workshop"       \
             +   str (chapter_number)   + "/21694/"  + class_section 
 
     return url; 
@@ -160,38 +160,32 @@ def get_Workshop_Urls (class_section):
 
     
 
-def download_File (link, directory, filename):
+def download_File (workshop, link):
 
     # TESTING
-    print ('\n\ndownload_File() :: link: '+link+'\n\n')
+    print ('\ndownload_File() :: link: '+link+'\n\n')
     # TESTING
 
-    #opener = urllib2.build_opener(proxy)
-    #opener.addheaders = {'User-agent':'Custom user agent'}
-    #urllib2.install_opener(opener)
+    request = urllib2.Request (link)
 
-    request = urllib2.Request(link, headers={'User-Agent':'Mozilla/5.0 '\
-        +'(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '\
-        +'Chrome/44.0.2403.107 Safari/537.36','Upgrade-Insecure-Requests': \
-        '1','x-runtime': '148ms'})
+    try:
+        response = urllib2.urlopen (request)
 
-    request.headers['User-agent'] = 'Custom user agent'
+        file_stream = open (workshop.directory+'/'+ \
+            workshop.current_filename, 'wb')
 
-    request.add_header('User-agent', 'Custom user agent')
-    
-    request.add_unredirected_header ('User-Agent', 'Custom User-Agent') 
+        file_stream.write (response.read ())
 
-    response = urllib2.urlopen (request)
+        file_stream.close ()
 
-    os.chdir (directory)
+    except urllib2.HTTPError, e:
 
-    file_stream = open (filename, 'wb')
+        file_stream = open (workshop.directory+'/'+ \
+            workshop.current_filename, 'wb')
 
-    #download = wget.download (link)
+        file_stream.write (e.fp.read ())
 
-    file_stream.write (response.read ())
-
-    file_stream.close ()
+        file_stream.close ()
 
     return;
 
@@ -200,16 +194,37 @@ def Scrape (section):
 
     for i in range (1, 16):
 
+        print ('\n\nChapter ' + str(i))
+
         workshop = Workshop (section, i)
         
+        workshop.file_count = 0
+
         for a_tag in workshop.download_links:
+
+            workshop.file_count += 1
+
+            print ('\n\t' + str (workshop.file_count) + ' of ' + \
+                str (workshop.download_links.__len__ ()))
 
             download_link = \
                 re.sub(r"(../../../)", __LINK_CONSTANT, a_tag['href'])
 
-            filename = get_File_Name (a_tag)
+            workshop.current_filename = \
+                re.sub (r"(.*/.*/.*/)", "", a_tag['href'])
 
-            download_File (download_link, workshop.directory, filename)
+            if workshop.current_filename.__len__ () < 1:
+
+                print('\n-----------------')
+                print('\n-----------------')
+                print('\n-----------------')
+                print('\n\t[ERROR] filename is empty')
+
+            else:
+
+                print ('\tDownloading: ' + workshop.current_filename)
+
+                download_File (workshop, download_link)
 
     return;
 
