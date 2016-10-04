@@ -1,11 +1,11 @@
 # TESTING
-from urllib2 import urlopen
+from urllib.request import urlopen
+from urllib.error import HTTPError
 # TESTING
 import shutil
 import os
 import re
 from bs4 import BeautifulSoup
-import urllib2
 
 
 # Globals
@@ -14,61 +14,91 @@ __LINK_CONSTANT = "http://zeus.mtsac.edu/~rpatters/CISD11/Workshops/"
 
 __CLASS_SECTIONS = ["Assignment.htm", "Lab.htm"]
 
-__MAX_URL = 16
+__MAX_URL = 15
 
 # # 
 
 
 class Workshop:
 
-    def __init__ (self, section_title, chapter_number):
+    def __init__ (self, section, chapter_number):
 
-        self.section_title = section_title
+        self.section = section
+
+        self.section_title = section[:-4]
 
         self.chapter_number = chapter_number
 
-        self.workshop_url = get_Workshop_Url (section_title, chapter_number)
+        self.workshop_url = get_Workshop_Url (section, chapter_number)
 
         self.soup = get_Soup (self.workshop_url)
 
-        self.directory = section_title + '/Chapter' + str (chapter_number)
+        self.directory = self.section_title + '/Chapter' + str (chapter_number)
 
         prepare_Directory (self.directory)
 
-        self.download_links = get_Download_Links (self.soup)
+        self.download_links = get_Download_a_Tags (self.soup)
 
 # # 
 
+def save_to_file (obj):
+
+    with open ('error_a_tags.txt', 'a') as error_a_tag_file:
+        
+        error_a_tag_file.write ('\nError occured -- Now Saving --')
+
+        for element in obj:
+
+            error_a_tag_file.write ('\n')
+            error_a_tag_file.write (str (element))
+
+    return;
+
     
-def get_Download_Links (web_page):
+def get_Download_a_Tags (web_page):
 
     string_pattern = re.compile (r'\bdownload')
 
-    links = web_page.find_all ('a',  attrs={'title' : string_pattern});
+    a_tags = web_page.find_all ('a',  attrs={'title' : string_pattern});
 
-    return links;
+    with open ('complete_a_tags.txt', 'a') as a_tag_file:
+
+        a_tag_file.write ('\nNew Element:')
+
+        for a_tag in a_tags: 
+
+            a_tag_file.write ('\n\t')
+
+            a_tag_file.write (str (a_tag))
+
+        a_tag_file.write ('--------\n')
+
+    return a_tags;
 
 
 def get_Soup (url):
 
-    DOM = urllib2.urlopen (url).read ()
+    DOM = urlopen (url).read ()
 
     return BeautifulSoup (DOM, "html.parser");
 
 
+''' 
+#   Deprecated?
 def get_File_Name (link):
 
     return re.sub (r"(.*/.*/.*/)", "", link['href'])
+'''
 
 
 
-def get_File_Names (links):
+def get_File_Names (a_tags):
 
     file_names = []
 
-    for link in links:
+    for a_tag in a_tags:
 
-        file_names.append (re.sub (r"(.*/.*/.*/)", "", link['href']))
+        file_names.append (re.sub (r"(.*/.*/.*/)", "", a_tag['href']))
 
     return file_names;
 
@@ -77,37 +107,11 @@ def prepare_Directory (pathname):
 
     if os.path.exists (pathname):
 
-# TODO Don't clobber
         shutil.rmtree (pathname)
 
     os.makedirs (pathname)
 
     return; 
-
-
-def get_Directories (section, filenames):
-
-    directories = []
-
-    if os.path.exists (section):
-
-        shutil.rmtree (section)
-
-    os.makedirs (section)
-
-    for i in range (1, __MAX_URL):
-
-        directory_name = str (section) + '/Chapter_' + str(i) 
-
-        if os.path.exists (directory_name):
-
-            shutil.rmtree (directory_name)
-
-        os.makedirs (directory_name)
-
-        directories.append (directory_name)
-
-    return directories;
 
 
 def get_Workshop_Url (class_section, chapter_number):
@@ -166,10 +170,8 @@ def download_File (workshop, link):
     print ('\ndownload_File() :: link: '+link+'\n\n')
     # TESTING
 
-    request = urllib2.Request (link)
-
     try:
-        response = urllib2.urlopen (request)
+        response = urlopen (link)
 
         file_stream = open (workshop.directory+'/'+ \
             workshop.current_filename, 'wb')
@@ -178,7 +180,7 @@ def download_File (workshop, link):
 
         file_stream.close ()
 
-    except urllib2.HTTPError, e:
+    except HTTPError as e:
 
         file_stream = open (workshop.directory+'/'+ \
             workshop.current_filename, 'wb')
@@ -192,7 +194,7 @@ def download_File (workshop, link):
 
 def Scrape (section):
 
-    for i in range (1, 16):
+    for i in range (1, __MAX_URL):
 
         print ('\n\nChapter ' + str(i))
 
@@ -211,7 +213,8 @@ def Scrape (section):
                 re.sub(r"(../../../)", __LINK_CONSTANT, a_tag['href'])
 
             workshop.current_filename = \
-                re.sub (r"(.*/.*/.*/)", "", a_tag['href'])
+                a_tag['href'].rsplit ('/', 1)[-1]
+                #re.sub (r"(.*/.*/.*/)", "", a_tag['href'])
 
             if workshop.current_filename.__len__ () < 1:
 
@@ -223,8 +226,13 @@ def Scrape (section):
                 print('\n-----------------')
                 print('\n-----------------')
 
-                f = open ('errorFile.txt, w')
-                f.append (download_link)
+                with open ('errorFile.txt', 'a') as errorFile:
+
+                    errorFile.write ('\n' + str(download_link))
+
+                # TESTING
+                save_to_file (a_tag)
+                # TESTING
 
             else:
 
@@ -237,3 +245,5 @@ def Scrape (section):
 
 Scrape (__CLASS_SECTIONS[0])
 Scrape (__CLASS_SECTIONS[1])
+
+
