@@ -219,6 +219,12 @@ def Scrape (section):
                 print('\n-----------------')
                 print('\n-----------------')
                 print('\n\t[ERROR] filename is empty')
+                print('\n-----------------')
+                print('\n-----------------')
+                print('\n-----------------')
+
+                f = open ('errorFile.txt, w')
+                f.append (download_link)
 
             else:
 
