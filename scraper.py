@@ -43,7 +43,7 @@ class Workshop:
 
 def save_to_file (obj):
 
-    with open ('error_a_tags.txt', 'a') as error_a_tag_file:
+    with open ('Documents/error_a_tags.txt', 'a') as error_a_tag_file:
         
         error_a_tag_file.write ('\nError occured -- Now Saving --')
 
@@ -61,7 +61,7 @@ def get_Download_a_Tags (web_page):
 
     a_tags = web_page.find_all ('a',  attrs={'title' : string_pattern});
 
-    with open ('complete_a_tags.txt', 'a') as a_tag_file:
+    with open ('Documents/complete_a_tags.txt', 'a') as a_tag_file:
 
         a_tag_file.write ('\nNew Element:')
 
@@ -226,7 +226,7 @@ def Scrape (section):
                 print('\n-----------------')
                 print('\n-----------------')
 
-                with open ('errorFile.txt', 'a') as errorFile:
+                with open ('Documents/errorFile.txt', 'a') as errorFile:
 
                     errorFile.write ('\n' + str(download_link))
 
